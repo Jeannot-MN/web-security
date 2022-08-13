@@ -12,12 +12,14 @@ const BALANCES = {
     'admin': 459.99
 }
 
+const COOKIE_SECRET = "ThisIsACookieSecret";
+
 const app = express();
 app.use(bordyParser.urlencoded({ extended: true }))
-app.use(cookieParser());
+app.use(cookieParser(COOKIE_SECRET));
 
 app.get('/', (req, res) => {
-    const { username } = req.cookies;
+    const { username } = req.signedCookies;
 
     if (username && USERS[username]) {
         res.send(`Hi ${username}! Your balance is ${BALANCES[username]}`);
@@ -32,7 +34,7 @@ app.post('/login', (req, res) => {
     const validPassword = USERS[username];
 
     if (password === validPassword) {
-        res.cookie('username', username);
+        res.cookie('username', username, { signed: true });
         res.redirect("/");
     } else {
         res.send('fail');
