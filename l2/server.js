@@ -1,17 +1,30 @@
 const express = require('express');
 const { createReadStream } = require('fs');
 const bordyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 
 const USERS = {
     'admin': 'admin',
     'john': 'password'
 }
 
+const BALANCES = {
+    'admin': 459.99
+}
+
 const app = express();
 app.use(bordyParser.urlencoded({ extended: true }))
+app.use(cookieParser());
 
 app.get('/', (req, res) => {
-    createReadStream('index.html').pipe(res);
+    const { username } = req.cookies;
+
+    if (username && USERS[username]) {
+        res.send(`Hi ${username}! Your balance is ${BALANCES[username]}`);
+    } else {
+        res.clearCookie('username');
+        createReadStream('index.html').pipe(res);
+    }
 });
 
 app.post('/login', (req, res) => {
@@ -20,12 +33,17 @@ app.post('/login', (req, res) => {
 
     if (password === validPassword) {
         res.cookie('username', username);
-        res.send('nice');
+        res.redirect("/");
     } else {
         res.send('fail');
     }
 
 });
+
+app.get('/logout', (req, res) => {
+    res.clearCookie('username');
+    res.redirect('/');
+})
 
 app.listen(4444, () => {
     console.log("Server listening on port 4444");
